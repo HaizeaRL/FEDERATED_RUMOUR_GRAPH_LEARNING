@@ -1,4 +1,4 @@
-# FEDERATED-RUMOUR-GRAP-LEARNING
+# FEDERATED-RUMOUR-GRAPH-LEARNING
 
 -   **Author**: Haizea Rumayor Lazkano
 -   **Last update**: December 2024
@@ -15,9 +15,11 @@ In the `federated learning` framework, the project leverages a server and multip
 
 The server receives the messages, groups them, preprocesses the data, and trains a `Random Forest model` to detect patterns that determine whether a message is a rumour.  The model can identify key features such as propagation, author, mentions, emotions, and other related factors. Although the results are not returned to the client in this pilot phase, in future iterations, they could be used to classify messages as rumours or not, based on the patterns learned.
 
+**Scope note**: in this prototype, clients build the graphs and extract per-message features locally, and send those features (not the raw tweets) to the server, where the model is trained centrally. It is therefore a federated-inspired architecture with distributed preprocessing. In a full federated learning setup, each client would train a local model and share only model updates (e.g., FedAvg); this is the natural next step.
+
 ## Key Features
 
-- **Federated Learning**: The system operates in a federated learning setup, where client nodes analyze data locally and send summarized information to a central server for further processing and model training.
+- **Federated-Inspired Architecture**: Client nodes analyze data locally and send extracted features to a central server for model training.
   
 - **Graph-Based Analysis**: Each client builds message-related graphs based on the PHEME dataset, analyzing the relationships between authors, messages, and message propagation.
 
@@ -25,7 +27,7 @@ The server receives the messages, groups them, preprocesses the data, and trains
 
 - **MQTT Communication**: MQTT (Message Queuing Telemetry Transport) is used for lightweight and efficient communication between the client nodes and the server. This protocol allows for quick data transmission, ensuring minimal latency while sending the summarized information from the client to the server.
 
-- **Scalable Architecture**: The federated learning setup allows the system to scale across multiple clients and datasets, improving efficiency and privacy.
+- **Multiple Clients**: New client nodes can be added by building an image with a different role; each client processes one PHEME topic.
   
 - **Future Expansion**: While the pilot phase focuses on training the model, future iterations could enable real-time classification of messages as rumours or not, based on the learned patterns.
 
@@ -42,7 +44,7 @@ The project is organized into the following directories and files:
 - **requirements.txt**: Lists the Python packages required to run the project.
 - **Dockerfile**: Used to launch the project in a Docker container.
 - **config.yaml**: Contains configuration settings for MQTT communication between the client nodes and the server.
-- **data_config.yaml**: Contains information about hte datasets to be downloaded and analyzed by each client.
+- **data_config.yaml**: Contains information about the datasets to be downloaded and analyzed by each client.
 
 ## Yaml File Content Overview
 
@@ -153,7 +155,7 @@ To ensure a clean and isolated environment for this project, a `Dockerfile` is p
    docker build -t server --build-arg ROLE=SERVER .
    ```
 
-2. **Run the Server Docker Image**:
+3. **Run the Server Docker Image**:
     Launch the server container without GUI support:
     ```bash
     docker run -it --rm -v ${PWD}:/app <server_app_identification>
@@ -217,9 +219,8 @@ The server connects to the MQTT broker and subscribes to the specified topic. It
 - **Data Aggregation and Preprocessing**:  
 After receiving the messages, the server aggregates all the data into a single structure. This data is then preprocessed to ensure that it is ready for training the machine learning model. This step includes cleaning the data and organizing it into a suitable format for analysis.
 
-- **Model Training**:  
-With the preprocessed data, the server proceeds to train a **Random Forest model**. The model learns from the patterns in the data, helping to identify characteristics that distinguish rumour messages from non-rumours.
+- **Model Training and Evaluation**:  
+With the preprocessed data, the server trains a **Random Forest model**. Data is split 80/20 into training and test sets, hyperparameters are tuned with `GridSearchCV` (5-fold cross-validation), and the best model is evaluated on the test set with a confusion matrix, classification report and accuracy. Feature importances are also reported.
 
 - **Pattern and Rules Extraction**:  
 After the model is trained, it is used to extract rules or patterns that define which features are indicative of rumour messages. These patterns include factors such as message propagation, mentions, hashtags, emotional tone, and other relevant features that help in determining whether a message is a rumour.
-
